@@ -1,0 +1,2 @@
+#Make sure dirs and files that aren't important are ignored
+node_modules

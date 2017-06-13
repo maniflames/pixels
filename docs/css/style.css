@@ -1,0 +1,19 @@
+body {
+    background: #000; 
+    margin: 0;
+    overflow: hidden; 
+    font-family: "Press Start 2P", cursive; 
+    color: #FFFFFF; 
+}
+
+score {
+    position: absolute; 
+    top: 20px;
+    left: 20px; 
+}
+
+canvas {
+    background: #000;
+    width: 100vw;
+    height: 100vw; 
+}
