@@ -13,6 +13,10 @@ private _enemies = new Array<Enemy>();
 private _lasers = new Array<Laser>(); 
 private score : Score; 
 private _health : Health;
+private startScreen : StartScreen;
+private enemyRenderer : number; 
+private gameRenderer : number;
+private gameRendererLoop : number; 
 
     public get scene() : THREE.Scene {
         return this._scene; 
@@ -51,20 +55,26 @@ private _health : Health;
 
     constructor(){
     this._util = new Utility();
-    this.startGame(); 
-    //this.showStartScreen(); 
+     this.setupEnvironment();
+    this.startScreen = new StartScreen(this); 
+
     }
 
     private gameLoop() : void {
 
+    if(this.player){
+
         for(var enemyIndex = 0; enemyIndex < this._enemies.length; enemyIndex++ ){
             let enemy = this._enemies[enemyIndex];
+
 
             if(this._util.detectCollision(this.player, enemy)){
                 this._health.percentage -= enemy.damageValue;
                 let enemyIndex = this._enemies.indexOf(enemy); 
                 enemy.remove(enemyIndex); 
-                }       
+                enemy = undefined; 
+                break;
+            }       
 
             for(var laserIndex = 0; laserIndex < this._lasers.length; laserIndex++){
                 let laser = this._lasers[laserIndex]; 
@@ -72,13 +82,18 @@ private _health : Health;
                 if(this._util.detectCollision(enemy, laser)){
                     this.score.points += enemy.pointValue;
                     enemy.remove(enemyIndex);
-                    laser.remove(laserIndex); 
+                    laser.remove(laserIndex);
+                    enemy = undefined;
+                    laser = undefined; 
+                    break;  
                 }
                                 
             }
         }
          
         this.player.move(); 
+
+    }
 
         for(var laser of this._lasers){
             laser.move();
@@ -88,15 +103,21 @@ private _health : Health;
             enemy.move(); 
         }
 
+        if(this._health){
+            this._health.checkDeath();
+        }
+ 
         this.renderer.render(this._scene, this._camera);
-        requestAnimationFrame(() => this.gameLoop()); 
+        this.gameRendererLoop = requestAnimationFrame(() => this.gameLoop()); 
     }
 
-    private startGame(){
-        this.setupEnvironment();
+    public startGame(){
+        this.startScreen = undefined; 
+        this.score = new Score(); 
+        this._health = new Health(this);
         this.player = new Player(this,  ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
-        window.setInterval(() => this.renderEnemies(), 4000); 
-        requestAnimationFrame(() => this.gameLoop()); 
+        this.enemyRenderer = window.setInterval(() => this.renderEnemies(), 4000); 
+        this.gameRenderer = requestAnimationFrame(() => this.gameLoop()); 
     }
 
     private renderEnemies(){
@@ -112,22 +133,52 @@ private _health : Health;
     }
 
     public addLaser(positionX : number, positionY : number, positionZ : number){
+        if(this.player){
         let laser = new Laser(positionX, positionY, positionZ, this); 
         this._lasers.push(laser); 
+        }
     }
 
     public endGame(){
-        console.log("Game Over"); 
+  
+        window.clearInterval(this.enemyRenderer); 
+        console.log("cleared the enemy renderer");
+
+        if(this.player){
+        this.player.remove();  
+        console.log("removed the player mesh");
+        this.player = undefined;
+        console.log("removed the player object");
+        }
+
+       if(this._enemies.length == 0){
+           this.renderer.clear();
+
+            this._health.remove();
+            this._health = undefined; 
+            console.log("removed health HTMLElement & object");
+            
+            this.score.remove();
+            console.log("removed score HTMLElement");
+            console.log("Score: " + this.score.points);
+
+            window.clearInterval(this.gameRenderer); 
+            window.clearInterval(this.gameRendererLoop);
+            console.log("cleared all renderers");
+
+            console.log("so far so good, just be lazy and press f5"); 
+            //show end screen
+            let endScreen = new EndScreen(this.score); 
+        }
+
+
+        
     }
 
-//setup the three js environment
     private setupEnvironment() {
         let screen = document.createElement("canvas");
         screen.id = "canvas"; 
         document.body.appendChild(screen); 
-
-        this.score = new Score(); 
-        this._health = new Health(this);
     
         this._scene = new THREE.Scene(); 
         this._camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 3000);
@@ -152,64 +203,6 @@ private _health : Health;
         this._scene.add(floor);  
             
         this._boundingBoxGame = new THREE.Box3( new THREE.Vector3(-6, -4, -80) , new THREE.Vector3(6,4,8)); 
-    }
-
-    private showStartScreen(){
-        let startscreen = document.createElement("div"); 
-        startscreen.id = "startscreen";
-        document.body.appendChild(startscreen);
-        
-        let gameText = document.createElement("div");
-        gameText.innerHTML = "PIXELS";
-        gameText.style.position = "absolute"; 
-        gameText.style.top = (window.innerHeight / 6) + "px";
-        gameText.style.left = (window.innerWidth / 2) - ( (1/2) * 96) + "px";
-        startscreen.appendChild(gameText);
-
-        let arrowImg = document.createElement("img");
-        arrowImg.src = "img/Arrow_keys.png"; 
-        arrowImg.style.position = "absolute"; 
-        arrowImg.style.top = window.innerHeight / 3 + "px";
-        arrowImg.style.left = (window.innerWidth / 2) - (3 * 64) + "px";
-        startscreen.appendChild(arrowImg); 
-
-        let moveText = document.createElement("div");
-        moveText.innerHTML = "move";
-        moveText.style.position = "absolute"; 
-        moveText.style.top = (window.innerHeight / 3) + moveText.clientHeight + 64 + "px";
-        moveText.style.left = (window.innerWidth / 2) - (3 * 64) + 20 + "px";
-        startscreen.appendChild(moveText);  
-
-        let spacebar = document.createElement("img");
-        spacebar.src = "img/Spacebar.png"; 
-        spacebar.style.position = "absolute"; 
-        spacebar.style.top = (window.innerHeight / 3) + 23 + "px";
-        spacebar.style.left = (window.innerWidth / 2) + (64) + "px";
-        startscreen.appendChild(spacebar);
-
-        let shootText = document.createElement("div");
-        shootText.innerHTML = "shoot"; 
-        shootText.style.position = "absolute"; 
-        shootText.style.top = (window.innerHeight / 3) + shootText.clientHeight + 64 + "px";
-        shootText.style.left = (window.innerWidth / 2) + (64) + 40 + "px";
-        startscreen.appendChild(shootText);
-
-        let startText = document.createElement("div");
-        startText.innerHTML = "start";
-        startText.id = "start"; 
-        startText.style.position = "absolute"; 
-        startText.style.top = (2/3) * (window.innerHeight) + startText.clientHeight + 64 + "px";
-        startText.style.left = (window.innerWidth / 2) - ((1/2) * 80 ) + "px";
-        startscreen.appendChild(startText);
-
-        startText.addEventListener("click", (e: MouseEvent) => this.removeStartScreen);
-    }
-
-    private removeStartScreen(){
-        let startscreen = document.getElementById("startscreen"); 
-        startscreen.remove(); 
-        this.startGame(); 
-        console.log(this.startGame); 
     }
 
 }

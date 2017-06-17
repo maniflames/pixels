@@ -34,7 +34,6 @@ get damageValue(){
         if(this._object.position.z > 25){
             let search = this.game.enemies.indexOf(this);
             if(search == -1){
-                console.log("Error 404"); 
             } else {
                 this.remove(search); 
             }
@@ -43,7 +42,7 @@ get damageValue(){
 
     remove(index : number){
         this.game.scene.remove(this.game.enemies[index].object);
-        this.game.enemies.splice(index);
+        this.game.enemies.splice(index, 1);
     }
 
 }

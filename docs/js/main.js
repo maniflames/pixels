@@ -8,6 +8,30 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var EndScreen = (function () {
+    function EndScreen(score) {
+        this.score = score;
+        var gameOver = document.createElement("h1");
+        document.body.appendChild(gameOver);
+        gameOver.innerHTML = "GAME OVER";
+        gameOver.style.position = "absolute";
+        gameOver.style.top = window.innerHeight / 3 + "px";
+        gameOver.style.left = (window.innerWidth / 2) - (288 / 2) + "px";
+        var endScore = document.createElement("h3");
+        document.body.appendChild(endScore);
+        endScore.innerHTML = score.points.toString();
+        endScore.style.position = "absolute";
+        endScore.style.top = (window.innerHeight / 3) + 140 + "px";
+        endScore.style.left = (window.innerWidth / 2) - (endScore.clientWidth / 2) + "px";
+        var restart = document.createElement("h3");
+        document.body.appendChild(restart);
+        restart.innerHTML = "press [f5] to restart";
+        restart.style.position = "absolute";
+        restart.style.top = (2 / 3) * window.innerHeight + "px";
+        restart.style.left = (window.innerWidth / 2) - (392 / 2) + "px";
+    }
+    return EndScreen;
+}());
 var GameObject = (function () {
     function GameObject(hexColor, width, height, depth, startPositionZ, game) {
         this._width = width;
@@ -145,7 +169,6 @@ var Enemy = (function (_super) {
         if (this._object.position.z > 25) {
             var search = this.game.enemies.indexOf(this);
             if (search == -1) {
-                console.log("Error 404");
             }
             else {
                 this.remove(search);
@@ -154,7 +177,7 @@ var Enemy = (function (_super) {
     };
     Enemy.prototype.remove = function (index) {
         this.game.scene.remove(this.game.enemies[index].object);
-        this.game.enemies.splice(index);
+        this.game.enemies.splice(index, 1);
     };
     return Enemy;
 }(GameObject));
@@ -163,7 +186,8 @@ var Game = (function () {
         this._enemies = new Array();
         this._lasers = new Array();
         this._util = new Utility();
-        this.startGame();
+        this.setupEnvironment();
+        this.startScreen = new StartScreen(this);
     }
     Object.defineProperty(Game.prototype, "scene", {
         get: function () {
@@ -222,23 +246,30 @@ var Game = (function () {
     });
     Game.prototype.gameLoop = function () {
         var _this = this;
-        for (var enemyIndex = 0; enemyIndex < this._enemies.length; enemyIndex++) {
-            var enemy_1 = this._enemies[enemyIndex];
-            if (this._util.detectCollision(this.player, enemy_1)) {
-                this._health.percentage -= enemy_1.damageValue;
-                var enemyIndex_1 = this._enemies.indexOf(enemy_1);
-                enemy_1.remove(enemyIndex_1);
-            }
-            for (var laserIndex = 0; laserIndex < this._lasers.length; laserIndex++) {
-                var laser_1 = this._lasers[laserIndex];
-                if (this._util.detectCollision(enemy_1, laser_1)) {
-                    this.score.points += enemy_1.pointValue;
-                    enemy_1.remove(enemyIndex);
-                    laser_1.remove(laserIndex);
+        if (this.player) {
+            for (var enemyIndex = 0; enemyIndex < this._enemies.length; enemyIndex++) {
+                var enemy_1 = this._enemies[enemyIndex];
+                if (this._util.detectCollision(this.player, enemy_1)) {
+                    this._health.percentage -= enemy_1.damageValue;
+                    var enemyIndex_1 = this._enemies.indexOf(enemy_1);
+                    enemy_1.remove(enemyIndex_1);
+                    enemy_1 = undefined;
+                    break;
+                }
+                for (var laserIndex = 0; laserIndex < this._lasers.length; laserIndex++) {
+                    var laser_1 = this._lasers[laserIndex];
+                    if (this._util.detectCollision(enemy_1, laser_1)) {
+                        this.score.points += enemy_1.pointValue;
+                        enemy_1.remove(enemyIndex);
+                        laser_1.remove(laserIndex);
+                        enemy_1 = undefined;
+                        laser_1 = undefined;
+                        break;
+                    }
                 }
             }
+            this.player.move();
         }
-        this.player.move();
         for (var _i = 0, _a = this._lasers; _i < _a.length; _i++) {
             var laser = _a[_i];
             laser.move();
@@ -247,15 +278,20 @@ var Game = (function () {
             var enemy = _c[_b];
             enemy.move();
         }
+        if (this._health) {
+            this._health.checkDeath();
+        }
         this.renderer.render(this._scene, this._camera);
-        requestAnimationFrame(function () { return _this.gameLoop(); });
+        this.gameRendererLoop = requestAnimationFrame(function () { return _this.gameLoop(); });
     };
     Game.prototype.startGame = function () {
         var _this = this;
-        this.setupEnvironment();
+        this.startScreen = undefined;
+        this.score = new Score();
+        this._health = new Health(this);
         this.player = new Player(this, ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
-        window.setInterval(function () { return _this.renderEnemies(); }, 4000);
-        requestAnimationFrame(function () { return _this.gameLoop(); });
+        this.enemyRenderer = window.setInterval(function () { return _this.renderEnemies(); }, 4000);
+        this.gameRenderer = requestAnimationFrame(function () { return _this.gameLoop(); });
     };
     Game.prototype.renderEnemies = function () {
         var amountOfEnemies = this._util.generateRandomNumber(1, 5);
@@ -267,18 +303,39 @@ var Game = (function () {
         console.log(this._enemies);
     };
     Game.prototype.addLaser = function (positionX, positionY, positionZ) {
-        var laser = new Laser(positionX, positionY, positionZ, this);
-        this._lasers.push(laser);
+        if (this.player) {
+            var laser = new Laser(positionX, positionY, positionZ, this);
+            this._lasers.push(laser);
+        }
     };
     Game.prototype.endGame = function () {
-        console.log("Game Over");
+        window.clearInterval(this.enemyRenderer);
+        console.log("cleared the enemy renderer");
+        if (this.player) {
+            this.player.remove();
+            console.log("removed the player mesh");
+            this.player = undefined;
+            console.log("removed the player object");
+        }
+        if (this._enemies.length == 0) {
+            this.renderer.clear();
+            this._health.remove();
+            this._health = undefined;
+            console.log("removed health HTMLElement & object");
+            this.score.remove();
+            console.log("removed score HTMLElement");
+            console.log("Score: " + this.score.points);
+            window.clearInterval(this.gameRenderer);
+            window.clearInterval(this.gameRendererLoop);
+            console.log("cleared all renderers");
+            console.log("so far so good, just be lazy and press f5");
+            var endScreen = new EndScreen(this.score);
+        }
     };
     Game.prototype.setupEnvironment = function () {
         var screen = document.createElement("canvas");
         screen.id = "canvas";
         document.body.appendChild(screen);
-        this.score = new Score();
-        this._health = new Health(this);
         this._scene = new THREE.Scene();
         this._camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 3000);
         this._camera.position.z = 15;
@@ -298,56 +355,6 @@ var Game = (function () {
         floor.position.y = -(window.innerHeight / 2);
         this._scene.add(floor);
         this._boundingBoxGame = new THREE.Box3(new THREE.Vector3(-6, -4, -80), new THREE.Vector3(6, 4, 8));
-    };
-    Game.prototype.showStartScreen = function () {
-        var _this = this;
-        var startscreen = document.createElement("div");
-        startscreen.id = "startscreen";
-        document.body.appendChild(startscreen);
-        var gameText = document.createElement("div");
-        gameText.innerHTML = "PIXELS";
-        gameText.style.position = "absolute";
-        gameText.style.top = (window.innerHeight / 6) + "px";
-        gameText.style.left = (window.innerWidth / 2) - ((1 / 2) * 96) + "px";
-        startscreen.appendChild(gameText);
-        var arrowImg = document.createElement("img");
-        arrowImg.src = "img/Arrow_keys.png";
-        arrowImg.style.position = "absolute";
-        arrowImg.style.top = window.innerHeight / 3 + "px";
-        arrowImg.style.left = (window.innerWidth / 2) - (3 * 64) + "px";
-        startscreen.appendChild(arrowImg);
-        var moveText = document.createElement("div");
-        moveText.innerHTML = "move";
-        moveText.style.position = "absolute";
-        moveText.style.top = (window.innerHeight / 3) + moveText.clientHeight + 64 + "px";
-        moveText.style.left = (window.innerWidth / 2) - (3 * 64) + 20 + "px";
-        startscreen.appendChild(moveText);
-        var spacebar = document.createElement("img");
-        spacebar.src = "img/Spacebar.png";
-        spacebar.style.position = "absolute";
-        spacebar.style.top = (window.innerHeight / 3) + 23 + "px";
-        spacebar.style.left = (window.innerWidth / 2) + (64) + "px";
-        startscreen.appendChild(spacebar);
-        var shootText = document.createElement("div");
-        shootText.innerHTML = "shoot";
-        shootText.style.position = "absolute";
-        shootText.style.top = (window.innerHeight / 3) + shootText.clientHeight + 64 + "px";
-        shootText.style.left = (window.innerWidth / 2) + (64) + 40 + "px";
-        startscreen.appendChild(shootText);
-        var startText = document.createElement("div");
-        startText.innerHTML = "start";
-        startText.id = "start";
-        startText.style.position = "absolute";
-        startText.style.top = (2 / 3) * (window.innerHeight) + startText.clientHeight + 64 + "px";
-        startText.style.left = (window.innerWidth / 2) - ((1 / 2) * 80) + "px";
-        startscreen.appendChild(startText);
-        startText.addEventListener("click", function (e) { return _this.removeStartScreen; });
-    };
-    Game.prototype.removeStartScreen = function () {
-        var startscreen = document.getElementById("startscreen");
-        startscreen.remove();
-        this.startGame();
-        console.log(this.startGame);
     };
     return Game;
 }());
@@ -381,6 +388,9 @@ var Health = (function () {
             this.game.endGame();
         }
     };
+    Health.prototype.remove = function () {
+        this.div.remove();
+    };
     return Health;
 }());
 var Laser = (function (_super) {
@@ -399,7 +409,7 @@ var Laser = (function (_super) {
     };
     Laser.prototype.remove = function (index) {
         this.game.scene.remove(this.game.lasers[index].object);
-        this.game.lasers.splice(index);
+        this.game.lasers.splice(index, 1);
     };
     return Laser;
 }(GameObject));
@@ -442,6 +452,12 @@ var Player = (function (_super) {
             this._speedX = 0.03;
         }
     };
+    Player.prototype.remove = function () {
+        var _this = this;
+        window.removeEventListener("keyup", function (e) { return _this.onKeyUp(e); });
+        window.removeEventListener("keydown", function (e) { return _this.onkeydown(e); });
+        this.game.scene.remove(this.object);
+    };
     return Player;
 }(GameObject));
 var Score = (function () {
@@ -465,7 +481,69 @@ var Score = (function () {
     Score.prototype.displayScore = function (points) {
         this.div.innerHTML = "Score: " + points;
     };
+    Score.prototype.remove = function () {
+        this.div.remove();
+    };
     return Score;
+}());
+var StartScreen = (function () {
+    function StartScreen(g) {
+        this.game = g;
+        this.showStartScreen();
+    }
+    StartScreen.prototype.showStartScreen = function () {
+        var _this = this;
+        var startscreen = document.createElement("div");
+        startscreen.id = "startscreen";
+        document.body.appendChild(startscreen);
+        var gameText = document.createElement("h1");
+        startscreen.appendChild(gameText);
+        gameText.innerHTML = "PIXELS";
+        gameText.style.position = "absolute";
+        gameText.style.top = (window.innerHeight / 6) + "px";
+        gameText.style.left = (window.innerWidth / 2) - ((1 / 2) * 192) + "px";
+        var arrowImg = document.createElement("img");
+        arrowImg.src = "img/Arrow_keys.png";
+        arrowImg.style.position = "absolute";
+        arrowImg.style.top = window.innerHeight / 3 + "px";
+        arrowImg.style.left = (window.innerWidth / 2) - ((1 / 2) * 101) + "px";
+        startscreen.appendChild(arrowImg);
+        var moveText = document.createElement("div");
+        moveText.innerHTML = "move";
+        moveText.style.position = "absolute";
+        moveText.style.top = (window.innerHeight / 3) + moveText.clientHeight + 64 + "px";
+        moveText.style.left = (window.innerWidth / 2) - ((1 / 2) * 101) + 20 + "px";
+        startscreen.appendChild(moveText);
+        var spacebar = document.createElement("img");
+        spacebar.src = "img/Spacebar.png";
+        spacebar.style.position = "absolute";
+        spacebar.style.top = (window.innerHeight / 3) + 23 + 90 + "px";
+        spacebar.style.left = (window.innerWidth / 2) - ((1 / 2) * 159) + "px";
+        startscreen.appendChild(spacebar);
+        var shootText = document.createElement("div");
+        shootText.innerHTML = "shoot";
+        shootText.style.position = "absolute";
+        shootText.style.top = (window.innerHeight / 3) + 90 + 64 + "px";
+        shootText.style.left = (window.innerWidth / 2) - ((1 / 2) * 159) + 40 + "px";
+        startscreen.appendChild(shootText);
+        var startText = document.createElement("div");
+        startText.innerHTML = "press [p] to play";
+        startText.style.position = "absolute";
+        startText.style.top = (2 / 3) * (window.innerHeight) + "px";
+        startText.style.left = (window.innerWidth / 2) - ((1 / 2) * 272) + "px";
+        startscreen.appendChild(startText);
+        window.addEventListener("keydown", function (e) { return _this.removeStartScreen(e); });
+    };
+    StartScreen.prototype.removeStartScreen = function (e) {
+        var _this = this;
+        if (e.key == "p") {
+            window.removeEventListener("keydown", function (e) { return _this.removeStartScreen(e); });
+            var startscreen = document.getElementById("startscreen");
+            startscreen.remove();
+            this.game.startGame();
+        }
+    };
+    return StartScreen;
 }());
 var Utility = (function () {
     function Utility() {

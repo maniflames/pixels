@@ -50,4 +50,10 @@ class Player extends GameObject {
         }
     }
 
+    public remove(){
+        window.removeEventListener("keyup", (e : KeyboardEvent) => this.onKeyUp(e));
+        window.removeEventListener("keydown", (e : KeyboardEvent) => this.onkeydown(e));
+        this.game.scene.remove(this.object);
+    }
+
 }

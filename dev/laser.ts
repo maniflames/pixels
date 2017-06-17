@@ -17,6 +17,6 @@ class Laser extends GameObject{
 
     remove(index : number){
         this.game.scene.remove(this.game.lasers[index].object);
-        this.game.lasers.splice(index);
+        this.game.lasers.splice(index, 1);
     }
 }

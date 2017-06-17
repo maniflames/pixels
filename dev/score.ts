@@ -24,4 +24,8 @@ class Score {
         this.div.innerHTML = "Score: " + points; 
     }
 
+    public remove(){
+        this.div.remove(); 
+    }
+
 }

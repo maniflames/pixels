@@ -9,5 +9,6 @@
 <body>  
 <script src="vendor/node_modules/three/build/three.min.js"></script>    
 <script src="js/main.js"></script>     
+
 </body>
 </html>

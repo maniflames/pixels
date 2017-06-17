@@ -30,10 +30,14 @@ class Health {
         this.div.innerHTML = "Health: " + percentage + "%"; 
     }
 
-    private checkDeath(){
+    public checkDeath(){
         if(this._percentage <= 0){
             this.game.endGame(); 
         }
+    }
+
+    public remove() {
+        this.div.remove(); 
     }
 
 }
