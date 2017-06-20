@@ -2,7 +2,7 @@
 
 class GameObject {
     protected _object : THREE.Mesh;
-    public geometry : THREE.Geometry;
+    protected geometry : THREE.Geometry;
     protected material : THREE.MeshLambertMaterial;
     protected _width : number;
     protected _height : number;
@@ -83,7 +83,7 @@ class GameObject {
         
     }
 
-    public move() {
+    public move() : void {
         this._object.position.x += this._speedX;
         this._object.position.y += this._speedY; 
         this._object.position.z += this._speedZ; 

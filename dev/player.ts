@@ -11,7 +11,7 @@ class Player extends GameObject {
         window.addEventListener("keydown", (e : KeyboardEvent) => this.onkeydown(e));
     }
 
-    private onKeyUp(e : KeyboardEvent){
+    private onKeyUp(e : KeyboardEvent) : void{
         if(e.key == this.controls[0] || e.key == this.controls[1]){
             this._speedY = 0;
         }
@@ -22,7 +22,7 @@ class Player extends GameObject {
            
     }
 
-    private onkeydown(e : KeyboardEvent) {
+    private onkeydown(e : KeyboardEvent) : void {
         //["ArrowUp", "ArrowDown", "ArrayLeft", "ArrayRight"]
 
         if(e.key == " "){
@@ -50,7 +50,7 @@ class Player extends GameObject {
         }
     }
 
-    public remove(){
+    public remove() : void {
         window.removeEventListener("keyup", (e : KeyboardEvent) => this.onKeyUp(e));
         window.removeEventListener("keydown", (e : KeyboardEvent) => this.onkeydown(e));
         this.game.scene.remove(this.object);

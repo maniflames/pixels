@@ -6,7 +6,6 @@ private _scene : THREE.Scene;
 private _camera : THREE.PerspectiveCamera; 
 private renderer : THREE.WebGLRenderer; 
 private player : Player;
-private ray : THREE.Ray; 
 private _boundingBoxGame : THREE.Box3; 
 private _util : Utility;
 private _enemies = new Array<Enemy>(); 
@@ -58,6 +57,98 @@ private gameRendererLoop : number;
      this.setupEnvironment();
     this.startScreen = new StartScreen(this); 
 
+}
+
+    private setupEnvironment() : void {
+        let screen = document.createElement("canvas");
+        screen.id = "canvas"; 
+        document.body.appendChild(screen); 
+    
+        this._scene = new THREE.Scene(); 
+        this._camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 3000);
+        this._camera.position.z = 15; 
+        this.renderer = new THREE.WebGLRenderer({canvas: screen, antialias: true}); 
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setSize(window.innerWidth, window.innerHeight); 
+
+        let ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        this._scene.add(ambientLight);
+
+        let pointLight = new THREE.PointLight(0xffffff, 0.5);
+        pointLight.position.set(0, 0, this._camera.position.z + 15); 
+        this._scene.add(pointLight); 
+
+        let geometry = new THREE.PlaneGeometry(window.innerWidth * 4, 10000, 100, 100);
+        let material = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
+        material.wireframe = true; 
+        let floor = new THREE.Mesh(geometry, material);
+        floor.rotation.x = -90 * Math.PI / 180;
+        floor.position.y = - (window.innerHeight / 2);
+        this._scene.add(floor);  
+            
+        this._boundingBoxGame = new THREE.Box3( new THREE.Vector3(-6, -4, -80) , new THREE.Vector3(6,4,8)); 
+    }
+
+    public startGame(){
+        this.startScreen = undefined; 
+        this.score = new Score(); 
+        this._health = new Health(this);
+        this.player = new Player(this,  ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
+        this.enemyRenderer = window.setInterval(() => this.renderEnemies(), 4000); 
+        this.gameRenderer = requestAnimationFrame(() => this.gameLoop()); 
+    }
+
+    public endGame() : void {
+  
+        window.clearInterval(this.enemyRenderer); 
+        console.log("cleared the enemy renderer");
+
+        if(this.player){
+        this.player.remove();  
+        console.log("removed the player mesh");
+        this.player = undefined;
+        console.log("removed the player object");
+        }
+
+       if(this._enemies.length == 0){
+           this.renderer.clear();
+
+            this._health.remove();
+            this._health = undefined; 
+            console.log("removed health HTMLElement & object");
+            
+            this.score.remove();
+            console.log("removed score HTMLElement");
+            console.log("Score: " + this.score.points);
+
+            window.clearInterval(this.gameRenderer); 
+            window.clearInterval(this.gameRendererLoop);
+            console.log("cleared all renderers");
+
+            console.log("so far so good, just be lazy and press f5"); 
+            //show end screen
+            let endScreen = new EndScreen(this.score); 
+        }
+        
+    }
+
+    public addLaser(positionX : number, positionY : number, positionZ : number) : void{
+        if(this.player){
+        let laser = new Laser(positionX, positionY, positionZ, this); 
+        this._lasers.push(laser); 
+        }
+    }
+
+    private renderEnemies() : void {
+        let amountOfEnemies = this._util.generateRandomNumber(1,5); 
+        amountOfEnemies = Math.floor(amountOfEnemies);
+
+        for(var i = 0; i < amountOfEnemies; i++) {
+            let enemy = new Enemy(this);
+            this._enemies.push(enemy); 
+        }
+
+        console.log(this._enemies); 
     }
 
     private gameLoop() : void {
@@ -109,100 +200,6 @@ private gameRendererLoop : number;
  
         this.renderer.render(this._scene, this._camera);
         this.gameRendererLoop = requestAnimationFrame(() => this.gameLoop()); 
-    }
-
-    public startGame(){
-        this.startScreen = undefined; 
-        this.score = new Score(); 
-        this._health = new Health(this);
-        this.player = new Player(this,  ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
-        this.enemyRenderer = window.setInterval(() => this.renderEnemies(), 4000); 
-        this.gameRenderer = requestAnimationFrame(() => this.gameLoop()); 
-    }
-
-    private renderEnemies(){
-        let amountOfEnemies = this._util.generateRandomNumber(1,5); 
-        amountOfEnemies = Math.floor(amountOfEnemies);
-
-        for(var i = 0; i < amountOfEnemies; i++) {
-            let enemy = new Enemy(this);
-            this._enemies.push(enemy); 
-        }
-
-        console.log(this._enemies); 
-    }
-
-    public addLaser(positionX : number, positionY : number, positionZ : number){
-        if(this.player){
-        let laser = new Laser(positionX, positionY, positionZ, this); 
-        this._lasers.push(laser); 
-        }
-    }
-
-    public endGame(){
-  
-        window.clearInterval(this.enemyRenderer); 
-        console.log("cleared the enemy renderer");
-
-        if(this.player){
-        this.player.remove();  
-        console.log("removed the player mesh");
-        this.player = undefined;
-        console.log("removed the player object");
-        }
-
-       if(this._enemies.length == 0){
-           this.renderer.clear();
-
-            this._health.remove();
-            this._health = undefined; 
-            console.log("removed health HTMLElement & object");
-            
-            this.score.remove();
-            console.log("removed score HTMLElement");
-            console.log("Score: " + this.score.points);
-
-            window.clearInterval(this.gameRenderer); 
-            window.clearInterval(this.gameRendererLoop);
-            console.log("cleared all renderers");
-
-            console.log("so far so good, just be lazy and press f5"); 
-            //show end screen
-            let endScreen = new EndScreen(this.score); 
-        }
-
-
-        
-    }
-
-    private setupEnvironment() {
-        let screen = document.createElement("canvas");
-        screen.id = "canvas"; 
-        document.body.appendChild(screen); 
-    
-        this._scene = new THREE.Scene(); 
-        this._camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 3000);
-        this._camera.position.z = 15; 
-        this.renderer = new THREE.WebGLRenderer({canvas: screen, antialias: true}); 
-        this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.renderer.setSize(window.innerWidth, window.innerHeight); 
-
-        let ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-        this._scene.add(ambientLight);
-
-        let pointLight = new THREE.PointLight(0xffffff, 0.5);
-        pointLight.position.set(0, 0, this._camera.position.z + 15); 
-        this._scene.add(pointLight); 
-
-        let geometry = new THREE.PlaneGeometry(window.innerWidth * 4, 10000, 100, 100);
-        let material = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
-        material.wireframe = true; 
-        let floor = new THREE.Mesh(geometry, material);
-        floor.rotation.x = -90 * Math.PI / 180;
-        floor.position.y = - (window.innerHeight / 2);
-        this._scene.add(floor);  
-            
-        this._boundingBoxGame = new THREE.Box3( new THREE.Vector3(-6, -4, -80) , new THREE.Vector3(6,4,8)); 
     }
 
 }

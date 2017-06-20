@@ -26,17 +26,17 @@ class Health {
         this.game = g;
     }
 
-    private displayHealth(percentage : number){
+    private displayHealth(percentage : number) : void {
         this.div.innerHTML = "Health: " + percentage + "%"; 
     }
 
-    public checkDeath(){
+    public checkDeath() : void {
         if(this._percentage <= 0){
             this.game.endGame(); 
         }
     }
 
-    public remove() {
+    public remove() : void {
         this.div.remove(); 
     }
 

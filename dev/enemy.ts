@@ -29,7 +29,7 @@ get damageValue(){
         this._damageValue = 10; 
     }
 
-    move(){
+    public move() : void {
         super.move();
         if(this._object.position.z > 25){
             let search = this.game.enemies.indexOf(this);
@@ -40,7 +40,7 @@ get damageValue(){
         }
     }
 
-    remove(index : number){
+    public remove(index : number) : void {
         this.game.scene.remove(this.game.enemies[index].object);
         this.game.enemies.splice(index, 1);
     }

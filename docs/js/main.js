@@ -244,6 +244,78 @@ var Game = (function () {
         enumerable: true,
         configurable: true
     });
+    Game.prototype.setupEnvironment = function () {
+        var screen = document.createElement("canvas");
+        screen.id = "canvas";
+        document.body.appendChild(screen);
+        this._scene = new THREE.Scene();
+        this._camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 3000);
+        this._camera.position.z = 15;
+        this.renderer = new THREE.WebGLRenderer({ canvas: screen, antialias: true });
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        var ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        this._scene.add(ambientLight);
+        var pointLight = new THREE.PointLight(0xffffff, 0.5);
+        pointLight.position.set(0, 0, this._camera.position.z + 15);
+        this._scene.add(pointLight);
+        var geometry = new THREE.PlaneGeometry(window.innerWidth * 4, 10000, 100, 100);
+        var material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
+        material.wireframe = true;
+        var floor = new THREE.Mesh(geometry, material);
+        floor.rotation.x = -90 * Math.PI / 180;
+        floor.position.y = -(window.innerHeight / 2);
+        this._scene.add(floor);
+        this._boundingBoxGame = new THREE.Box3(new THREE.Vector3(-6, -4, -80), new THREE.Vector3(6, 4, 8));
+    };
+    Game.prototype.startGame = function () {
+        var _this = this;
+        this.startScreen = undefined;
+        this.score = new Score();
+        this._health = new Health(this);
+        this.player = new Player(this, ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
+        this.enemyRenderer = window.setInterval(function () { return _this.renderEnemies(); }, 4000);
+        this.gameRenderer = requestAnimationFrame(function () { return _this.gameLoop(); });
+    };
+    Game.prototype.endGame = function () {
+        window.clearInterval(this.enemyRenderer);
+        console.log("cleared the enemy renderer");
+        if (this.player) {
+            this.player.remove();
+            console.log("removed the player mesh");
+            this.player = undefined;
+            console.log("removed the player object");
+        }
+        if (this._enemies.length == 0) {
+            this.renderer.clear();
+            this._health.remove();
+            this._health = undefined;
+            console.log("removed health HTMLElement & object");
+            this.score.remove();
+            console.log("removed score HTMLElement");
+            console.log("Score: " + this.score.points);
+            window.clearInterval(this.gameRenderer);
+            window.clearInterval(this.gameRendererLoop);
+            console.log("cleared all renderers");
+            console.log("so far so good, just be lazy and press f5");
+            var endScreen = new EndScreen(this.score);
+        }
+    };
+    Game.prototype.addLaser = function (positionX, positionY, positionZ) {
+        if (this.player) {
+            var laser = new Laser(positionX, positionY, positionZ, this);
+            this._lasers.push(laser);
+        }
+    };
+    Game.prototype.renderEnemies = function () {
+        var amountOfEnemies = this._util.generateRandomNumber(1, 5);
+        amountOfEnemies = Math.floor(amountOfEnemies);
+        for (var i = 0; i < amountOfEnemies; i++) {
+            var enemy = new Enemy(this);
+            this._enemies.push(enemy);
+        }
+        console.log(this._enemies);
+    };
     Game.prototype.gameLoop = function () {
         var _this = this;
         if (this.player) {
@@ -283,78 +355,6 @@ var Game = (function () {
         }
         this.renderer.render(this._scene, this._camera);
         this.gameRendererLoop = requestAnimationFrame(function () { return _this.gameLoop(); });
-    };
-    Game.prototype.startGame = function () {
-        var _this = this;
-        this.startScreen = undefined;
-        this.score = new Score();
-        this._health = new Health(this);
-        this.player = new Player(this, ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
-        this.enemyRenderer = window.setInterval(function () { return _this.renderEnemies(); }, 4000);
-        this.gameRenderer = requestAnimationFrame(function () { return _this.gameLoop(); });
-    };
-    Game.prototype.renderEnemies = function () {
-        var amountOfEnemies = this._util.generateRandomNumber(1, 5);
-        amountOfEnemies = Math.floor(amountOfEnemies);
-        for (var i = 0; i < amountOfEnemies; i++) {
-            var enemy = new Enemy(this);
-            this._enemies.push(enemy);
-        }
-        console.log(this._enemies);
-    };
-    Game.prototype.addLaser = function (positionX, positionY, positionZ) {
-        if (this.player) {
-            var laser = new Laser(positionX, positionY, positionZ, this);
-            this._lasers.push(laser);
-        }
-    };
-    Game.prototype.endGame = function () {
-        window.clearInterval(this.enemyRenderer);
-        console.log("cleared the enemy renderer");
-        if (this.player) {
-            this.player.remove();
-            console.log("removed the player mesh");
-            this.player = undefined;
-            console.log("removed the player object");
-        }
-        if (this._enemies.length == 0) {
-            this.renderer.clear();
-            this._health.remove();
-            this._health = undefined;
-            console.log("removed health HTMLElement & object");
-            this.score.remove();
-            console.log("removed score HTMLElement");
-            console.log("Score: " + this.score.points);
-            window.clearInterval(this.gameRenderer);
-            window.clearInterval(this.gameRendererLoop);
-            console.log("cleared all renderers");
-            console.log("so far so good, just be lazy and press f5");
-            var endScreen = new EndScreen(this.score);
-        }
-    };
-    Game.prototype.setupEnvironment = function () {
-        var screen = document.createElement("canvas");
-        screen.id = "canvas";
-        document.body.appendChild(screen);
-        this._scene = new THREE.Scene();
-        this._camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 3000);
-        this._camera.position.z = 15;
-        this.renderer = new THREE.WebGLRenderer({ canvas: screen, antialias: true });
-        this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        var ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-        this._scene.add(ambientLight);
-        var pointLight = new THREE.PointLight(0xffffff, 0.5);
-        pointLight.position.set(0, 0, this._camera.position.z + 15);
-        this._scene.add(pointLight);
-        var geometry = new THREE.PlaneGeometry(window.innerWidth * 4, 10000, 100, 100);
-        var material = new THREE.MeshLambertMaterial({ color: 0x00ff00 });
-        material.wireframe = true;
-        var floor = new THREE.Mesh(geometry, material);
-        floor.rotation.x = -90 * Math.PI / 180;
-        floor.position.y = -(window.innerHeight / 2);
-        this._scene.add(floor);
-        this._boundingBoxGame = new THREE.Box3(new THREE.Vector3(-6, -4, -80), new THREE.Vector3(6, 4, 8));
     };
     return Game;
 }());
@@ -396,7 +396,7 @@ var Health = (function () {
 var Laser = (function (_super) {
     __extends(Laser, _super);
     function Laser(positionX, positionY, positionZ, g) {
-        var _this = _super.call(this, 0x00ff00, 0.1, 0.1, 0.3, 0, g) || this;
+        var _this = _super.call(this, 0x00ff00, 0.1, 0.1, 0.6, 0, g) || this;
         _this.object.position.set(positionX, positionY, positionZ);
         _this._speedZ = -0.1;
         return _this;
@@ -404,6 +404,9 @@ var Laser = (function (_super) {
     Laser.prototype.move = function () {
         _super.prototype.move.call(this);
         if (this.object.position.z > 10) {
+            this.game.scene.remove(this.object);
+        }
+        if (this.object.position.z, -80) {
             this.game.scene.remove(this.object);
         }
     };
