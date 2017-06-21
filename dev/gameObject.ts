@@ -2,7 +2,7 @@
 
 class GameObject {
     protected _object : THREE.Mesh;
-    protected geometry : THREE.Geometry;
+    public geometry : THREE.Geometry;
     protected material : THREE.MeshLambertMaterial;
     protected _width : number;
     protected _height : number;
