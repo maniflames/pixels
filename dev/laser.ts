@@ -3,7 +3,7 @@
 class Laser extends GameObject{
 
     constructor(positionX : number, positionY : number, positionZ : number, g : Game){
-        super(0x00ff00, 0.1, 0.1, 0.6, -70, g); 
+        super(0x00ff00, 0.1, 0.1, 0.6, 0, g); 
         this.object.position.set(positionX, positionY, positionZ); 
         this._speedZ = -0.1; 
     }
