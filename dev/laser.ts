@@ -10,12 +10,12 @@ class Laser extends GameObject{
 
     move() : void {
         super.move();
-        if(this.object.position.z > 10){
-            this.game.scene.remove(this.object);
-        }
-        if(this.object.position.z , -80){
-            this.game.scene.remove(this.object); 
-        }
+//         if(this.object.position.z > 10){
+//             this.game.scene.remove(this.object);
+//         }
+//         if(this.object.position.z , -80){
+//             this.game.scene.remove(this.object); 
+//         }
     }
 
     remove(index : number) : void {
