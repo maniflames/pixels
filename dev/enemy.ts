@@ -15,7 +15,7 @@ get damageValue(){
 
     constructor(g : Game){
         let randomZ = -(Math.random() * 30) - 30;
-        super(0xff0000, 1, 1, 1, randomZ, g);
+        super(0xff0000, 1, 1, 1, 0, g);
 
         let randomX = this.game.util.generateRandomNumber(-3, 6, true);
         let randomY = this.game.util.generateRandomNumber(-2, 4, true); 
