@@ -13,7 +13,7 @@ class Laser extends GameObject{
         if(this.object.position.z > 10){
             this.game.scene.remove(this.object);
         }
-        if(this.object.position.z , -80){
+        if(this.object.position.z < -80){
             this.game.scene.remove(this.object); 
         }
     }
