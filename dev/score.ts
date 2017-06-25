@@ -4,11 +4,11 @@ class Score {
     private div : HTMLElement; 
     private _points : number; 
 
-    get points(){
+    public get points(){
         return this._points; 
     }
 
-    set points(value){
+    public set points(value){
         this._points = value; 
         this.displayScore(this._points);
     }
