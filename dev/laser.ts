@@ -8,7 +8,7 @@ class Laser extends GameObject{
         this._speedZ = -0.1; 
     }
 
-    move() : void {
+    public move() : void {
         super.move();
 
         if(this.object.position.z > 10){
@@ -20,7 +20,7 @@ class Laser extends GameObject{
         }
     }
 
-    remove(index : number) : void {
+    public remove(index : number) : void {
         this.game.scene.remove(this.game.lasers[index].object);
         this.game.lasers.splice(index, 1);
     }

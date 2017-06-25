@@ -1,14 +1,30 @@
 # pixelsGame
 
-You can play the game online by going to this website: 
-[http://imanidap.nl/game](http://imanidap.nl/game "Pixels")
-
 This was a school assignment. The idea was that you could make whatever game you wanted to make as long as you used typescript and used some specific prinicples within object oriented programming. 
 
+### Play and/or install
+You can play the game online by going to this website: 
+[http://imanidap.nl/game](http://imanidap.nl/game "Pixels").
+
+If you want to install the game you can fork, clone or download this repository. Put it in a folder from where you can host the game locally. If you want to make your own version of the game make sure you install [typescript](https://www.typescriptlang.org/ "Typescript webite").
+
+
 ## UML
-The following image is a representation of how the different objects relate to eachother. 
+
+The following image is a representation of how the different classes relate to eachother.
 
 ![alt text](docs/img/UML_Pixels.jpg "UML")
+ 
+## Classes & Instances
+The UML from above shows the different classes I have made. An intance of a class is the same as a new object of that class. 
+
+In my [`Main.ts`](dev/main.ts "Go to main.ts") file I make an intance of the [`Game`](dev/game.ts "Go to the Game Class") class. 
+
+```Typescript
+    window.addEventListener("load", function(){
+        new Game(); 
+    });
+```
 
 ## Encapsulation
 All the properties of an object are private to protect them. I have written getters and setters for properties that are needed outside of the class. Only methods I just want to call within the class and nowhere else are private. 
@@ -54,7 +70,7 @@ class Laser extends GameObject{
         this._speedZ = -0.1; 
     }
 
-    move() : void {
+    public move() : void {
         super.move();
 
         if(this.object.position.z > 10){
@@ -71,7 +87,8 @@ class Laser extends GameObject{
 ```
 
 ## Composition
-Instead creating an instance of every class within `Game` I used composition to distibute the code. A good example of my use of composition is the relationship between `Player` and `Health`. 
+Instead creating an instance of every class within [`Game`](dev/game.ts "Go to the Game Class") I used composition to distibute the classes. A good example of my use of composition is the relationship between [`Player`](dev/player.ts "Go to the player Class") and [`Health`](dev/health.ts "Go to the health class"). 
+
 Because `Health` is something that the player has I made it a property of player. To check if the player has died I wrote the `checkDeath` method in `Health`. The only thing is that I have to check the health within the `gameLoop` in `Game`. By write a getter for `Health` in `Player` I can execute `checkDeath` without making an instance of `Health` in `Game`.
 
 The explanation above shown as code in `Game`:
@@ -81,6 +98,7 @@ class Game {
 
     private gameLoop() : void {
         if(this.player){
+
             //more code
             if(this._player.health.checkDeath()){
             this.endGame();
@@ -88,8 +106,9 @@ class Game {
         }
 
         this._player.move();
+
         }
-        
+
         //even more code
     }
 
