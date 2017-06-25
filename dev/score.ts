@@ -20,11 +20,11 @@ class Score {
         this.displayScore(this._points); 
     }
 
-    private displayScore(points : number){
+    private displayScore(points : number) : void {
         this.div.innerHTML = "Score: " + points; 
     }
 
-    public remove(){
+    public remove() : void {
         this.div.remove(); 
     }
 

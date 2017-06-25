@@ -5,17 +5,16 @@ class Game {
 private _scene : THREE.Scene;
 private _camera : THREE.PerspectiveCamera; 
 private renderer : THREE.WebGLRenderer; 
-private player : Player;
+private _player : Player;
 private _boundingBoxGame : THREE.Box3; 
 private _util : Utility;
 private _enemies = new Array<Enemy>(); 
 private _lasers = new Array<Laser>(); 
-private score : Score; 
-private _health : Health;
 private startScreen : StartScreen;
 private enemyRenderer : number; 
 private gameRenderer : number;
 private gameRendererLoop : number; 
+
 
     public get scene() : THREE.Scene {
         return this._scene; 
@@ -45,16 +44,17 @@ private gameRendererLoop : number;
         this._lasers = array; 
     }
 
-    public get health() : Health {
-        return this._health;
-    }
     public get util() : Utility {
         return this._util; 
     }
 
+    public get player() : Player {
+        return this._player;
+    }
+
     constructor(){
     this._util = new Utility();
-     this.setupEnvironment();
+    this.setupEnvironment();
     this.startScreen = new StartScreen(this); 
 
 }
@@ -89,51 +89,36 @@ private gameRendererLoop : number;
         this._boundingBoxGame = new THREE.Box3( new THREE.Vector3(-6, -4, -80) , new THREE.Vector3(6,4,8)); 
     }
 
-    public startGame(){
+    public startGame(){ 
         this.startScreen = undefined; 
-        this.score = new Score(); 
-        this._health = new Health(this);
-        this.player = new Player(this,  ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
+        this._player = new Player(this,  new Health(this), new Score(), ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
         this.enemyRenderer = window.setInterval(() => this.renderEnemies(), 4000); 
         this.gameRenderer = requestAnimationFrame(() => this.gameLoop()); 
     }
 
     public endGame() : void {
   
+        if(this._player){
+                let endScreen = new EndScreen(this._player.score); 
+                this._player.remove();  
+                this._player = undefined;
+            }
+             
         window.clearInterval(this.enemyRenderer); 
-        console.log("cleared the enemy renderer");
 
-        if(this.player){
-        this.player.remove();  
-        console.log("removed the player mesh");
-        this.player = undefined;
-        console.log("removed the player object");
+        for (let enemy of this.enemies){
+            enemy.remove(); 
         }
 
-       if(this._enemies.length == 0){
-           this.renderer.clear();
+        this.renderer.clear();
 
-            this._health.remove();
-            this._health = undefined; 
-            console.log("removed health HTMLElement & object");
-            
-            this.score.remove();
-            console.log("removed score HTMLElement");
-            console.log("Score: " + this.score.points);
+        window.clearInterval(this.gameRenderer); 
+        window.clearInterval(this.gameRendererLoop);
 
-            window.clearInterval(this.gameRenderer); 
-            window.clearInterval(this.gameRendererLoop);
-            console.log("cleared all renderers");
-
-            console.log("so far so good, just be lazy and press f5"); 
-            //show end screen
-            let endScreen = new EndScreen(this.score); 
-        }
-        
     }
 
     public addLaser(positionX : number, positionY : number, positionZ : number) : void{
-        if(this.player){
+        if(this._player){
         let laser = new Laser(positionX, positionY, positionZ, this); 
         this._lasers.push(laser); 
         }
@@ -146,23 +131,20 @@ private gameRendererLoop : number;
         for(var i = 0; i < amountOfEnemies; i++) {
             let enemy = new Enemy(this);
             this._enemies.push(enemy); 
-        }
-
-        console.log(this._enemies); 
+            }
     }
 
     private gameLoop() : void {
 
-    if(this.player){
+    if(this._player){
 
         for(var enemyIndex = 0; enemyIndex < this._enemies.length; enemyIndex++ ){
             let enemy = this._enemies[enemyIndex];
 
-
-            if(this._util.detectCollision(this.player, enemy)){
-                this._health.percentage -= enemy.damageValue;
+            if(this._util.detectCollision(this._player, enemy)){
+                this._player.health.percentage -= enemy.damageValue;
                 let enemyIndex = this._enemies.indexOf(enemy); 
-                enemy.remove(enemyIndex); 
+                enemy.remove(); 
                 enemy = undefined; 
                 break;
             }       
@@ -171,19 +153,22 @@ private gameRendererLoop : number;
                 let laser = this._lasers[laserIndex]; 
 
                 if(this._util.detectCollision(enemy, laser)){
-                    this.score.points += enemy.pointValue;
-                    enemy.remove(enemyIndex);
+                    this._player.score.points += enemy.pointValue;
+                    enemy.remove();
                     laser.remove(laserIndex);
                     enemy = undefined;
                     laser = undefined; 
                     break;  
-                }
-                                
+                }                    
             }
         }
-         
-        this.player.move(); 
+        
+        if(this._player.health.checkDeath()){
+            this.endGame();
+            return; 
+        }
 
+        this._player.move(); 
     }
 
         for(var laser of this._lasers){
@@ -192,10 +177,6 @@ private gameRendererLoop : number;
 
         for(var enemy of this._enemies){
             enemy.move(); 
-        }
-
-        if(this._health){
-            this._health.checkDeath();
         }
  
         this.renderer.render(this._scene, this._camera);

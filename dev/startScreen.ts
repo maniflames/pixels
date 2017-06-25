@@ -1,8 +1,8 @@
 class StartScreen {
-    game : Game; 
+    private game : Game; 
 
     constructor(g : Game){
-         this.game = g;
+        this.game = g;
         this.showStartScreen(); 
     }
 
@@ -61,9 +61,15 @@ class StartScreen {
       private removeStartScreen(e : KeyboardEvent){
             if(e.key == "p"){
             window.removeEventListener("keydown", (e : KeyboardEvent) => this.removeStartScreen(e));
-            let startscreen = document.getElementById("startscreen"); 
-            startscreen.remove(); 
+
+            if(document.getElementById("startscreen")){
+                let startscreen = document.getElementById("startscreen"); 
+                startscreen.remove(); 
+            }
+
+            if(!this.game.player){
             this.game.startGame(); 
+            }
           }    
     }
 }

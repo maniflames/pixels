@@ -167,15 +167,11 @@ var Enemy = (function (_super) {
     Enemy.prototype.move = function () {
         _super.prototype.move.call(this);
         if (this._object.position.z > 25) {
-            var search = this.game.enemies.indexOf(this);
-            if (search == -1) {
-            }
-            else {
-                this.remove(search);
-            }
+            this.remove();
         }
     };
-    Enemy.prototype.remove = function (index) {
+    Enemy.prototype.remove = function () {
+        var index = this.game.enemies.indexOf(this);
         this.game.scene.remove(this.game.enemies[index].object);
         this.game.enemies.splice(index, 1);
     };
@@ -230,16 +226,16 @@ var Game = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(Game.prototype, "health", {
+    Object.defineProperty(Game.prototype, "util", {
         get: function () {
-            return this._health;
+            return this._util;
         },
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(Game.prototype, "util", {
+    Object.defineProperty(Game.prototype, "player", {
         get: function () {
-            return this._util;
+            return this._player;
         },
         enumerable: true,
         configurable: true
@@ -271,38 +267,27 @@ var Game = (function () {
     Game.prototype.startGame = function () {
         var _this = this;
         this.startScreen = undefined;
-        this.score = new Score();
-        this._health = new Health(this);
-        this.player = new Player(this, ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
+        this._player = new Player(this, new Health(this), new Score(), ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
         this.enemyRenderer = window.setInterval(function () { return _this.renderEnemies(); }, 4000);
         this.gameRenderer = requestAnimationFrame(function () { return _this.gameLoop(); });
     };
     Game.prototype.endGame = function () {
+        if (this._player) {
+            var endScreen = new EndScreen(this._player.score);
+            this._player.remove();
+            this._player = undefined;
+        }
         window.clearInterval(this.enemyRenderer);
-        console.log("cleared the enemy renderer");
-        if (this.player) {
-            this.player.remove();
-            console.log("removed the player mesh");
-            this.player = undefined;
-            console.log("removed the player object");
+        for (var _i = 0, _a = this.enemies; _i < _a.length; _i++) {
+            var enemy = _a[_i];
+            enemy.remove();
         }
-        if (this._enemies.length == 0) {
-            this.renderer.clear();
-            this._health.remove();
-            this._health = undefined;
-            console.log("removed health HTMLElement & object");
-            this.score.remove();
-            console.log("removed score HTMLElement");
-            console.log("Score: " + this.score.points);
-            window.clearInterval(this.gameRenderer);
-            window.clearInterval(this.gameRendererLoop);
-            console.log("cleared all renderers");
-            console.log("so far so good, just be lazy and press f5");
-            var endScreen = new EndScreen(this.score);
-        }
+        this.renderer.clear();
+        window.clearInterval(this.gameRenderer);
+        window.clearInterval(this.gameRendererLoop);
     };
     Game.prototype.addLaser = function (positionX, positionY, positionZ) {
-        if (this.player) {
+        if (this._player) {
             var laser = new Laser(positionX, positionY, positionZ, this);
             this._lasers.push(laser);
         }
@@ -314,25 +299,24 @@ var Game = (function () {
             var enemy = new Enemy(this);
             this._enemies.push(enemy);
         }
-        console.log(this._enemies);
     };
     Game.prototype.gameLoop = function () {
         var _this = this;
-        if (this.player) {
+        if (this._player) {
             for (var enemyIndex = 0; enemyIndex < this._enemies.length; enemyIndex++) {
                 var enemy_1 = this._enemies[enemyIndex];
-                if (this._util.detectCollision(this.player, enemy_1)) {
-                    this._health.percentage -= enemy_1.damageValue;
+                if (this._util.detectCollision(this._player, enemy_1)) {
+                    this._player.health.percentage -= enemy_1.damageValue;
                     var enemyIndex_1 = this._enemies.indexOf(enemy_1);
-                    enemy_1.remove(enemyIndex_1);
+                    enemy_1.remove();
                     enemy_1 = undefined;
                     break;
                 }
                 for (var laserIndex = 0; laserIndex < this._lasers.length; laserIndex++) {
                     var laser_1 = this._lasers[laserIndex];
                     if (this._util.detectCollision(enemy_1, laser_1)) {
-                        this.score.points += enemy_1.pointValue;
-                        enemy_1.remove(enemyIndex);
+                        this._player.score.points += enemy_1.pointValue;
+                        enemy_1.remove();
                         laser_1.remove(laserIndex);
                         enemy_1 = undefined;
                         laser_1 = undefined;
@@ -340,7 +324,11 @@ var Game = (function () {
                     }
                 }
             }
-            this.player.move();
+            if (this._player.health.checkDeath()) {
+                this.endGame();
+                return;
+            }
+            this._player.move();
         }
         for (var _i = 0, _a = this._lasers; _i < _a.length; _i++) {
             var laser = _a[_i];
@@ -349,9 +337,6 @@ var Game = (function () {
         for (var _b = 0, _c = this._enemies; _b < _c.length; _b++) {
             var enemy = _c[_b];
             enemy.move();
-        }
-        if (this._health) {
-            this._health.checkDeath();
         }
         this.renderer.render(this._scene, this._camera);
         this.gameRendererLoop = requestAnimationFrame(function () { return _this.gameLoop(); });
@@ -385,8 +370,9 @@ var Health = (function () {
     };
     Health.prototype.checkDeath = function () {
         if (this._percentage <= 0) {
-            this.game.endGame();
+            return true;
         }
+        return false;
     };
     Health.prototype.remove = function () {
         this.div.remove();
@@ -396,7 +382,7 @@ var Health = (function () {
 var Laser = (function (_super) {
     __extends(Laser, _super);
     function Laser(positionX, positionY, positionZ, g) {
-        var _this = _super.call(this, 0x00ff00, 0.1, 0.1, 0.6, 0, g) || this;
+        var _this = _super.call(this, 0x00ff00, 0.1, 0.1, 0.3, 0, g) || this;
         _this.object.position.set(positionX, positionY, positionZ);
         _this._speedZ = -0.1;
         return _this;
@@ -406,7 +392,7 @@ var Laser = (function (_super) {
         if (this.object.position.z > 10) {
             this.game.scene.remove(this.object);
         }
-        if (this.object.position.z, -80) {
+        if (this.object.position.z < -80) {
             this.game.scene.remove(this.object);
         }
     };
@@ -421,15 +407,31 @@ window.addEventListener("load", function () {
 });
 var Player = (function (_super) {
     __extends(Player, _super);
-    function Player(g, controls, hexColor) {
+    function Player(g, h, s, controls, hexColor) {
         if (hexColor === void 0) { hexColor = 0x00ff00; }
         var _this = _super.call(this, hexColor, 1, 1, 1, 0, g) || this;
         _this.controls = new Array();
+        _this._health = h;
+        _this._score = s;
         _this.controls = controls;
         window.addEventListener("keyup", function (e) { return _this.onKeyUp(e); });
         window.addEventListener("keydown", function (e) { return _this.onkeydown(e); });
         return _this;
     }
+    Object.defineProperty(Player.prototype, "health", {
+        get: function () {
+            return this._health;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Player.prototype, "score", {
+        get: function () {
+            return this._score;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Player.prototype.onKeyUp = function (e) {
         if (e.key == this.controls[0] || e.key == this.controls[1]) {
             this._speedY = 0;
@@ -460,6 +462,8 @@ var Player = (function (_super) {
         window.removeEventListener("keyup", function (e) { return _this.onKeyUp(e); });
         window.removeEventListener("keydown", function (e) { return _this.onkeydown(e); });
         this.game.scene.remove(this.object);
+        this.health.remove();
+        this.score.remove();
     };
     return Player;
 }(GameObject));
@@ -541,9 +545,13 @@ var StartScreen = (function () {
         var _this = this;
         if (e.key == "p") {
             window.removeEventListener("keydown", function (e) { return _this.removeStartScreen(e); });
-            var startscreen = document.getElementById("startscreen");
-            startscreen.remove();
-            this.game.startGame();
+            if (document.getElementById("startscreen")) {
+                var startscreen = document.getElementById("startscreen");
+                startscreen.remove();
+            }
+            if (!this.game.player) {
+                this.game.startGame();
+            }
         }
     };
     return StartScreen;

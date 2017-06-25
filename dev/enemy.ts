@@ -1,5 +1,5 @@
 ///  <reference path="typings/index.d.ts" />
-///  <reference path="gameObject.ts" /> //Enemy wordt voor gameObject ingeladen
+///  <reference path="gameObject.ts" /> 
 
 class Enemy extends GameObject{ 
 private _pointValue : number; 
@@ -31,16 +31,13 @@ get damageValue(){
 
     public move() : void {
         super.move();
-        if(this._object.position.z > 25){
-            let search = this.game.enemies.indexOf(this);
-            if(search == -1){
-            } else {
-                this.remove(search); 
-            }
+        if(this._object.position.z > 25){   
+            this.remove();       
         }
     }
 
-    public remove(index : number) : void {
+    public remove() : void {
+        let index = this.game.enemies.indexOf(this);
         this.game.scene.remove(this.game.enemies[index].object);
         this.game.enemies.splice(index, 1);
     }

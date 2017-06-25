@@ -2,15 +2,11 @@
 
 class Utility {
 
-    constructor(){
-
-    }
-
-    public detectCollision(objectOne : GameObject, objectTwo : GameObject){ 
+    public detectCollision(objectOne : GameObject, objectTwo : GameObject) : boolean { 
        return objectOne.boundingBox.intersectsBox(objectTwo.boundingBox);
     }
 
-    public detectReverseCollision(objectOne : GameObject, objectTwo : GameObject){
+    public detectReverseCollision(objectOne : GameObject, objectTwo : GameObject) : boolean {
         return !objectOne.boundingBox.intersectsBox(objectTwo.boundingBox);
     }
 
