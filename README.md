@@ -1,22 +1,21 @@
 # pixelsGame
 
-This was a school assignment. The idea was that you could make whatever game you wanted to make as long as you used typescript and used some specific prinicples within object oriented programming. 
+This was a school assignment. The idea was that you could make whatever game you wanted to make as long as you used typescript and used some specific principles within object oriented programming.
 
 ### Play and/or install
-You can play the game online by going to this website: 
-[http://imanidap.nl/game](http://imanidap.nl/game "Pixels").
+Go to [https://pixels.imanidap.nl/](https://pixels.imanidap.nl/ "Pixels") to play the game!
 
 If you want to install the game you can fork, clone or download this repository. Put it in a folder from where you can host the game locally. If you want to make your own version of the game make sure you install [typescript](https://www.typescriptlang.org/ "Typescript webite").
 
 
 ## UML
 
-The following image is a representation of how the different classes relate to eachother.
+The following image is a representation of how the different classes relate to each other.
 
 ![alt text](docs/img/UML_Pixels.jpg "UML")
  
 ## Classes & Instances
-The UML from above shows the different classes I have made. An intance of a class is the same as a new object of that class. 
+The UML from above shows the different classes I made. An intance of a class is the same as a new object of that class. 
 
 In my [`Main.ts`](dev/main.ts "Go to main.ts") file I make an intance of the [`Game`](dev/game.ts "Go to the Game Class") class. 
 
@@ -58,7 +57,7 @@ class Score {
 ```
 
 ## Inheritance
-To save myself a lot of time I made a class called [`GameObject`](dev/gameObject.ts "Go to the GameObject class"). This class has all the basic properties and methods for object that are part of the game. The constructor makes sure the object is put in the game and creates a boudingbox so collosion with the object can be detected.
+To save myself a lot of time I made a class called [`GameObject`](dev/gameObject.ts "Go to the GameObject class"). This class has all the basic properties and methods for object that are part of the game. The constructor makes sure the object is put in the game and creates a boudingbox so collision with the object can be detected.
 
 An example of a child class form the `GameObject` is [`Laser`](dev/laser.ts "Go to the Laser Class").
 ```typescript
@@ -87,9 +86,9 @@ class Laser extends GameObject{
 ```
 
 ## Composition
-Instead creating an instance of every class within [`Game`](dev/game.ts "Go to the Game Class") I used composition to distibute the classes. A good example of my use of composition is the relationship between [`Player`](dev/player.ts "Go to the player Class") and [`Health`](dev/health.ts "Go to the health class"). 
+Instead of creating an instance of every class within [`Game`](dev/game.ts "Go to the Game Class") I used composition to distribute the classes. A good example of my use of composition is the relationship between [`Player`](dev/player.ts "Go to the player Class") and [`Health`](dev/health.ts "Go to the health class"). 
 
-Because `Health` is something that the player has I made it a property of player. To check if the player has died I wrote the `checkDeath` method in `Health`. The only thing is that I have to check the health within the `gameLoop` in `Game`. By write a getter for `Health` in `Player` I can execute `checkDeath` without making an instance of `Health` in `Game`.
+Because `Health` is something that the player has, I made it a property of player. To check if the player has died I wrote the `checkDeath` method in `Health`. The only thing is that I have to check the health within the `gameLoop` in `Game`. By writing a getter for `Health` in `Player` I can execute `checkDeath` without making an instance of `Health` in `Game`.
 
 The explanation above shown as code in `Game`:
 ```typescript
